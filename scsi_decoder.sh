@@ -1020,62 +1020,13 @@ SENSE_DATA=(
     ["0x7f/0x0"]=""
 )
 
-#list_dev=()
-#list_cmd=()
-#list_hcode=()
-#list_dcode=()
-#list_pcode=()
-#list_sense_key=()
-#list_sense_data=()
-#OLDIFS=$IFS
-#IFS=$'\n'
-#LIST_SCSI=( $(grep "Valid sense data" test.txt) )
-#for i in "${LIST_SCSI[@]}"
-#do
-#    #echo $i
-#    date=$(sed -r "s/([0-9]{4}-[0-9]{2}-[0-9]{2}T[^ ]+).*/\1/" <<< "$i")
-#    dev=$(sed -r 's/.* "(.*)" .*/\1/' <<< "$i")
-#    opcode=$(sed -r "s/.*Cmd[^ S]* (0x[0-9a-e]{1,2}).*/\1/" <<< "$i")
-#    hcode=$(sed -r "s/.*H:(0x[0-9a-e]{1,2}) .*/\1/" <<< "$i")
-#    dcode=$(sed -r "s/.*D:(0x[0-9a-e]{1,2}) .*/\1/" <<< "$i")
-#    pcode=$(sed -r "s/.*P:(0x[0-9a-e]{1,2}) .*/\1/" <<< "$i")
-#    sense_key=$(sed -r "s/.*Valid sense data: (0x[0-9a-e]{1,2}) 0x[0-9a-e]{1,2} 0x[0-9a-e]{1,2}.*/\1/" <<< "$i")
-#    sense_data=$(sed -r "s/.*Valid sense data: 0x[0-9a-e]{1,2} (0x[0-9a-e]{1,2}) (0x[0-9a-e]{1,2}).*/\1\/\2/" <<< "$i")
-#
-#    echo "$date"
-#    echo "         Device: $dev"
-#    echo "        Command: $opcode = ${CMD[$opcode]}"
-#    echo "    Host Status: $hcode = ${HOST_STATUS[$hcode]}"
-#    echo "  Device Status: $dcode = ${DEV_STATUS[$dcode]}"
-#    echo "  Plugin Status: $pcode = ${PLUGIN_STATUS[$pcode]}"
-#    echo "      Sense Key: $sense_key = ${SENSE_KEY[$sense_key]}"
-#    echo "Additional Data: $sense_data = ${SENSE_DATA[$sense_data]}"
-#    printf "\n"
-#    
-#    #list_dev+=($dev)
-#    #list_cmd+=($opcode)
-#    #list_hcode+=($hcode)
-#    #list_dcode+=($dcode)
-#    #list_pcode+=($pcode)
-#    #list_sense_key+=($sense_key)
-#    #list_sense_data+=($sense_data)
-#done
-#IFS=$OLDIFS
-
-
 OLDIFS=$IFS
 IFS=$'\n'
-SCSI_STAT=( $(grep "ScsiDeviceIO" vmkernel.log | grep "Valid sense data" | awk '{printf "%s %s %s %s %s %s %s/%s\n", substr($13, 2, length($13)-2), substr($5, 1, length($5)-1), $15, $16, $17, $21, $22, substr($23, 1, length($23)-1)}' | sort | uniq -c | sort -nr) )
+# expect a line like this
+# 2021-07-21T02:09:03.655Z cpu14:66301)ScsiDeviceIO: 3049: Cmd(0x439d413ff0c0) 0x1a, CmdSN 0x2dd from world 0 to dev "naa.50060160c7e0648980030160c7e06489" failed H:0x0 D:0x2 P:0x0 Valid sense data: 0x5 0x25 0x0.
+SCSI_STAT=( $(grep "ScsiDeviceIO" $@ | grep "Valid sense data" | awk '{printf "%s %s %s %s %s %s %s/%s\n", substr($13, 2, length($13)-2), substr($5, 1, length($5)-1), $15, $16, $17, $21, $22, substr($23, 1, length($23)-1)}' | sort | uniq -c | sort -nr) )
 for i in "${SCSI_STAT[@]}"
 do
-    dev=$(awk '{print $2}' <<< "$i")
-    opcode=$(awk '{print $3}' <<< "$i")
-    hcode=$(awk '{print $4}' <<< "$i" | cut -d ':' -f 2)
-    dcode=$(awk '{print $5}' <<< "$i" | cut -d ':' -f 2)
-    pcode=$(awk '{print $6}' <<< "$i" | cut -d ':' -f 2)
-    sense_key=$(awk '{print $7}' <<< "$i")
-    sense_data=$(awk '{print $8}' <<< "$i")
-    
     # $1 count 
     # $2 dev
     # $3 cmd
@@ -1084,6 +1035,15 @@ do
     # $6 pcode
     # $7 sense key 
     # $8 sense data 
+
+    dev=$(awk '{print $2}' <<< "$i")
+    opcode=$(awk '{print $3}' <<< "$i")
+    hcode=$(awk '{print $4}' <<< "$i" | cut -d ':' -f 2)
+    dcode=$(awk '{print $5}' <<< "$i" | cut -d ':' -f 2)
+    pcode=$(awk '{print $6}' <<< "$i" | cut -d ':' -f 2)
+    sense_key=$(awk '{print $7}' <<< "$i")
+    sense_data=$(awk '{print $8}' <<< "$i")
+
     awk '{printf "%s times dev:%s Cmd:%s %s %s %s Valid sense data: %s %s\n", $1, $2, $3, $4, $5, $6, $7, $8}' <<< "$i"
     echo "             Device: $dev"
     echo "            Command: $opcode = ${CMD[$opcode]}"
@@ -1093,6 +1053,6 @@ do
     echo "          Sense Key: $sense_key = ${SENSE_KEY[$sense_key]}"
     echo "    Additional Data: $sense_data = ${SENSE_DATA[$sense_data]}"
     printf "\n"
-    
+
 done
 IFS=$OLDIFS
