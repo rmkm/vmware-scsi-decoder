@@ -1020,99 +1020,79 @@ SENSE_DATA=(
     ["0x7f/0x0"]=""
 )
 
-#code="0x7"
-##scode="5eh/47h"
-#scode="5fh/00h"
-#ITER=0
-#for i in "${HCODE[@]}"
+#list_dev=()
+#list_cmd=()
+#list_hcode=()
+#list_dcode=()
+#list_pcode=()
+#list_sense_key=()
+#list_sense_data=()
+#OLDIFS=$IFS
+#IFS=$'\n'
+#LIST_SCSI=( $(grep "Valid sense data" test.txt) )
+#for i in "${LIST_SCSI[@]}"
 #do
-#    if [ $i = $code ]; then
-#        echo ${HTITLE[$ITER]}
-#        echo ${HDESC[$ITER]}
-#        break
-#    fi
-#    ITER=$(expr $ITER + 1)
-#done
-
-#ITER=0
-#for i in "${ASC[@]}"
-#do
-#    if [ $i = $scode ]; then
-#        echo ${ASCDESC[$ITER]}
-#        break
-#    fi
-#    ITER=$(expr $ITER + 1)
-#done
-
-#c="0x10"
-#cmd=$(get_command $c)
-#echo $cmd
-##H:0x0 D:0x2 P:0x0 Valid sense data: 0x5 0x25 0x0
-#ret=$(get_hstatus "0x0")
-#echo $ret
-#ret=$(get_hdesc "0x0")
-#echo $ret
-#ret=$(get_dstatus "0x2")
-#echo $ret
-#ret=$(get_pstatus "0x0")
-#echo $ret
-#ret=$(get_pdesc "0x0")
-#echo $ret
-#ret=$(get_skstatus "0x5")
-#echo "skstatus $ret"
-#ret=$(get_ascdesc "0x25/0x0")
-#echo "ascdesc $ret"
-
-#i=0
-#for code in "${ASC[@]}"
-#do
-#    echo "    [\"$code\"]=\"${ASCDESC[$i]}\""
-#    i=$(expr $i + 1)
-#done
-
-
-#start_time=`date "+%Y-%m-%d %H:%M:%S"`
-#for i in {1..10}
-#do
-#    for code in ${!CMDS[@]};
-#    do
-#        # $AREAでキーが取得できる。
-#        # 上記のtokyoやtottoriなど
-#        echo $code
+#    #echo $i
+#    date=$(sed -r "s/([0-9]{4}-[0-9]{2}-[0-9]{2}T[^ ]+).*/\1/" <<< "$i")
+#    dev=$(sed -r 's/.* "(.*)" .*/\1/' <<< "$i")
+#    opcode=$(sed -r "s/.*Cmd[^ S]* (0x[0-9a-e]{1,2}).*/\1/" <<< "$i")
+#    hcode=$(sed -r "s/.*H:(0x[0-9a-e]{1,2}) .*/\1/" <<< "$i")
+#    dcode=$(sed -r "s/.*D:(0x[0-9a-e]{1,2}) .*/\1/" <<< "$i")
+#    pcode=$(sed -r "s/.*P:(0x[0-9a-e]{1,2}) .*/\1/" <<< "$i")
+#    sense_key=$(sed -r "s/.*Valid sense data: (0x[0-9a-e]{1,2}) 0x[0-9a-e]{1,2} 0x[0-9a-e]{1,2}.*/\1/" <<< "$i")
+#    sense_data=$(sed -r "s/.*Valid sense data: 0x[0-9a-e]{1,2} (0x[0-9a-e]{1,2}) (0x[0-9a-e]{1,2}).*/\1\/\2/" <<< "$i")
+#
+#    echo "$date"
+#    echo "         Device: $dev"
+#    echo "        Command: $opcode = ${CMD[$opcode]}"
+#    echo "    Host Status: $hcode = ${HOST_STATUS[$hcode]}"
+#    echo "  Device Status: $dcode = ${DEV_STATUS[$dcode]}"
+#    echo "  Plugin Status: $pcode = ${PLUGIN_STATUS[$pcode]}"
+#    echo "      Sense Key: $sense_key = ${SENSE_KEY[$sense_key]}"
+#    echo "Additional Data: $sense_data = ${SENSE_DATA[$sense_data]}"
+#    printf "\n"
 #    
-#        # ${AREAS[$AREA]}でバリューが取得できる
-#        # 上記の東京や鳥取など
-#        echo ${CMDS[$code]}
-#    done
+#    #list_dev+=($dev)
+#    #list_cmd+=($opcode)
+#    #list_hcode+=($hcode)
+#    #list_dcode+=($dcode)
+#    #list_pcode+=($pcode)
+#    #list_sense_key+=($sense_key)
+#    #list_sense_data+=($sense_data)
 #done
-#end_time=`date "+%Y-%m-%d %H:%M:%S"`
-#echo $start_time
-#echo $end_time
+#IFS=$OLDIFS
+
 
 OLDIFS=$IFS
 IFS=$'\n'
-LIST_SCSI=( $(grep "Valid sense data" vmkernel.log) )
-for i in "${LIST_SCSI[@]}"
+SCSI_STAT=( $(grep "ScsiDeviceIO" vmkernel.log | grep "Valid sense data" | awk '{printf "%s %s %s %s %s %s %s/%s\n", substr($13, 2, length($13)-2), substr($5, 1, length($5)-1), $15, $16, $17, $21, $22, substr($23, 1, length($23)-1)}' | sort | uniq -c | sort -nr) )
+for i in "${SCSI_STAT[@]}"
 do
-    date=$(echo $i | sed -r "s/([0-9]{4}-[0-9]{2}-[0-9]{2}T[^ ]+).*/\1/")
-    opcode=$(echo $i | sed -r "s/.*Cmd[^ S]* (0x[0-9a-e]{1,2}).*/\1/")
-    hcode=$(echo $i | sed -r "s/.*H:(0x[0-9a-e]{1,2}) .*/\1/")
-    dcode=$(echo $i | sed -r "s/.*D:(0x[0-9a-e]{1,2}) .*/\1/")
-    pcode=$(echo $i | sed -r "s/.*P:(0x[0-9a-e]{1,2}) .*/\1/")
-    sense_key=$(echo $i | sed -r "s/.*Valid sense data: (0x[0-9a-e]{1,2}) 0x[0-9a-e]{1,2} 0x[0-9a-e]{1,2}.*/\1/")
-    add_sense_code=$(echo $i | sed -r "s/.*Valid sense data: 0x[0-9a-e]{1,2} (0x[0-9a-e]{1,2}) (0x[0-9a-e]{1,2}).*/\1\/\2/")
-
-    echo "$date"
-    echo "        Command: $opcode = ${CMD[$opcode]}"
-    echo "    Host Status: $hcode = ${HOST_STATUS[$hcode]}"
-    echo "  Device Status: $dcode = ${DEV_STATUS[$dcode]}"
-    echo "  Plugin Status: $pcode = ${PLUGIN_STATUS[$pcode]}"
-    echo "      Sense Key: $sense_key = ${SENSE_KEY[$sense_key]}"
-    echo "Additional Data: $add_sense_code = ${SENSE_DATA[$add_sense_code]}"
+    dev=$(awk '{print $2}' <<< "$i")
+    opcode=$(awk '{print $3}' <<< "$i")
+    hcode=$(awk '{print $4}' <<< "$i" | cut -d ':' -f 2)
+    dcode=$(awk '{print $5}' <<< "$i" | cut -d ':' -f 2)
+    pcode=$(awk '{print $6}' <<< "$i" | cut -d ':' -f 2)
+    sense_key=$(awk '{print $7}' <<< "$i")
+    sense_data=$(awk '{print $8}' <<< "$i")
+    
+    # $1 count 
+    # $2 dev
+    # $3 cmd
+    # $4 hcode
+    # $5 dcode
+    # $6 pcode
+    # $7 sense key 
+    # $8 sense data 
+    awk '{printf "%s times dev:%s Cmd:%s %s %s %s Valid sense data: %s %s\n", $1, $2, $3, $4, $5, $6, $7, $8}' <<< "$i"
+    echo "             Device: $dev"
+    echo "            Command: $opcode = ${CMD[$opcode]}"
+    echo "        Host Status: $hcode = ${HOST_STATUS[$hcode]}"
+    echo "      Device Status: $dcode = ${DEV_STATUS[$dcode]}"
+    echo "      Plugin Status: $pcode = ${PLUGIN_STATUS[$pcode]}"
+    echo "          Sense Key: $sense_key = ${SENSE_KEY[$sense_key]}"
+    echo "    Additional Data: $sense_data = ${SENSE_DATA[$sense_data]}"
     printf "\n"
+    
 done
 IFS=$OLDIFS
-
-
-
-
