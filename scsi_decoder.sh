@@ -1020,6 +1020,11 @@ SENSE_DATA=(
     ["0x7f/0x0"]=""
 )
 
+if [ $# -eq 0 ];then
+    echo "No arguments supplied. Please pass at least one vmkernel.log file."
+    exit
+fi
+
 OLDIFS=$IFS
 IFS=$'\n'
 # expect a line like this
