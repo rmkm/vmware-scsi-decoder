@@ -1049,7 +1049,7 @@ do
     sense_key=$(awk '{print $7}' <<< "$i")
     sense_data=$(awk '{print $8}' <<< "$i")
 
-    awk '{printf "%s times dev:%s Cmd:%s %s %s %s Valid sense data: %s %s\n", $1, $2, $3, $4, $5, $6, $7, $8}' <<< "$i"
+    awk '{printf "%s times faled. dev:%s Cmd:%s %s %s %s Valid sense data: %s %s\n", $1, $2, $3, $4, $5, $6, $7, $8}' <<< "$i"
     echo "             Device: $dev"
     echo "            Command: $opcode = ${CMD[$opcode]}"
     echo "        Host Status: $hcode = ${HOST_STATUS[$hcode]}"
